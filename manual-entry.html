@@ -352,10 +352,10 @@
   <div class="paste-section">
     <h3 class="form-title">📋 まとめて貼り付け（自動振り分け）</h3>
     <div class="paste-hint">
-      住所・名前・電話番号をまとめて貼り付けると、自動的に各フィールドに振り分けます。<br>
-      例: 〒123-4567 東京都渋谷区神宮前1-2-3 サンプルマンション101 山田太郎 090-1234-5678
+      住所・名前・電話番号・品名をまとめて貼り付けると、自動的に各フィールドに振り分けます。<br>
+      例: 〒123-4567 東京都渋谷区神宮前1-2-3 サンプルマンション101 山田太郎 090-1234-5678 アクセサリー（修理品）
     </div>
-    <textarea class="paste-textarea" id="pasteArea" placeholder="住所・名前・電話番号をここに貼り付け&#10;&#10;例:&#10;〒123-4567&#10;東京都渋谷区神宮前1-2-3&#10;サンプルマンション101&#10;山田 太郎&#10;090-1234-5678"></textarea>
+    <textarea class="paste-textarea" id="pasteArea" placeholder="住所・名前・電話番号・品名をここに貼り付け&#10;&#10;例:&#10;〒123-4567&#10;東京都渋谷区神宮前1-2-3&#10;サンプルマンション101&#10;山田 太郎&#10;090-1234-5678&#10;アクセサリー（修理品）"></textarea>
     <button class="parse-btn" id="parseBtn">⚡ 自動振り分け</button>
   </div>
 
@@ -708,13 +708,28 @@ function parseAndFill() {
   let addressLine = '';
   let buildingLine = '';
   let nameCandidate = '';
+  let itemNameCandidate = '';
+  const usedLines = new Set();
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
     // Skip lines that are just postal code or phone
-    if (/^〒?\s*\d{3}-?\d{4}$/.test(line)) continue;
-    if (/^\d{2,4}-?\d{2,4}-?\d{4}$/.test(line)) continue;
+    if (/^〒?\s*\d{3}-?\d{4}$/.test(line)) {
+      usedLines.add(i);
+      continue;
+    }
+    if (/^\d{2,4}-?\d{2,4}-?\d{4}$/.test(line)) {
+      usedLines.add(i);
+      continue;
+    }
+
+    // Check for explicit item name
+    if (/^(品名|商品名|アイテム)[：:]\s*(.+)/.test(line)) {
+      itemNameCandidate = line.replace(/^(品名|商品名|アイテム)[：:]\s*/, '');
+      usedLines.add(i);
+      continue;
+    }
 
     // Check if line starts with prefecture
     const startsWithPref = prefectures.some(p => line.startsWith(p));
@@ -722,12 +737,25 @@ function parseAndFill() {
     if (startsWithPref && !addressLine) {
       // This is the main address line
       addressLine = line;
+      usedLines.add(i);
     } else if (addressLine && !buildingLine && /[ビルマンションハイツ荘]|[0-9０-９]+号/.test(line)) {
       // This looks like a building name
       buildingLine = line;
-    } else if (!startsWithPref && !nameCandidate && line.length < 20 && !/[0-9０-９]/.test(line)) {
-      // This might be a name (no numbers, short)
+      usedLines.add(i);
+    } else if (!startsWithPref && !nameCandidate && line.length < 20 && /^[ぁ-んァ-ヶー一-龠\s]+$/.test(line)) {
+      // This might be a name (only Japanese characters and spaces, short)
       nameCandidate = line;
+      usedLines.add(i);
+    }
+  }
+
+  // If no explicit item name, use the last unused line as item name
+  if (!itemNameCandidate) {
+    for (let i = lines.length - 1; i >= 0; i--) {
+      if (!usedLines.has(i)) {
+        itemNameCandidate = lines[i];
+        break;
+      }
     }
   }
 
@@ -743,6 +771,10 @@ function parseAndFill() {
     document.getElementById('name').value = nameCandidate;
   }
 
+  if (itemNameCandidate) {
+    document.getElementById('itemName').value = itemNameCandidate;
+  }
+
   // Clear paste area
   document.getElementById('pasteArea').value = '';
 
@@ -751,6 +783,8 @@ function parseAndFill() {
     document.getElementById('name').focus();
   } else if (!document.getElementById('itemName').value) {
     document.getElementById('itemName').focus();
+  } else {
+    document.getElementById('addBtn').focus();
   }
 
   hideError();
