@@ -835,12 +835,21 @@ function processFile(file) {
       };
 
       const col送り状種類 = getColIndex('送り状種類');
-      const col商品名 = getColIndex('商品名');
+
+      // Try multiple column names for product name
+      let col商品名 = getColIndex('商品名');
+      if (col商品名 === -1) col商品名 = getColIndex('品名');
+      if (col商品名 === -1) col商品名 = getColIndex('商品名1');
 
       if (col送り状種類 === -1) {
         showError('B2クラウドのCSVフォーマットではないようです。STORESからヤマト用にエクスポートしたCSVを使ってください。');
         return;
       }
+
+      // Debug: log which columns were found
+      console.log('送り状種類カラム:', col送り状種類);
+      console.log('商品名カラム:', col商品名);
+      console.log('ヘッダー:', header.slice(0, 20));
 
       let fixCount = 0;
       let rowCount = 0;
@@ -871,9 +880,13 @@ function processFile(file) {
           const originalName = row[col商品名].trim();
           const mapping = productMappings.find(m => m.from === originalName);
           if (mapping) {
+            console.log(`商品名変換: "${originalName}" → "${mapping.to}"`);
             row[col商品名] = mapping.to;
             商品名Fixed++;
             fixCount++;
+          } else if (rowCount <= 3) {
+            // Debug: show first 3 product names that don't match
+            console.log(`マッピングなし: "${originalName}"`);
           }
         }
       }
@@ -904,6 +917,10 @@ function processFile(file) {
       }
       if (商品名Fixed > 0) {
         addChange(changesList, `商品名を ${商品名Fixed}件変換（登録済みマッピング適用）`);
+      } else if (productMappings.length > 0 && col商品名 === -1) {
+        addChange(changesList, `⚠️ 商品名カラムが見つかりません（変換スキップ）`);
+      } else if (productMappings.length > 0) {
+        addChange(changesList, `商品名マッピング登録済み（該当なし）`);
       }
       addChange(changesList, `全フィールドをクォート処理（ナンバーズ対策）`);
       addChange(changesList, `改行コードをCR+LFに統一（B2互換）`);
