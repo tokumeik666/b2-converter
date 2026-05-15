@@ -280,6 +280,64 @@
   }
 
   .error.show { display: block; }
+
+  .paste-section {
+    background: #111118;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid #222;
+    margin-bottom: 24px;
+  }
+
+  .paste-textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 12px;
+    background: #0a0a14;
+    border: 1px solid #333;
+    border-radius: 8px;
+    color: #e8e8ec;
+    font-size: 0.9rem;
+    font-family: inherit;
+    outline: none;
+    resize: vertical;
+    margin-bottom: 12px;
+    transition: border-color 0.2s;
+  }
+
+  .paste-textarea:focus {
+    border-color: #5b8aff;
+  }
+
+  .paste-textarea::placeholder {
+    color: #555;
+  }
+
+  .parse-btn {
+    width: 100%;
+    padding: 12px;
+    background: #1a1a2e;
+    color: #5b8aff;
+    border: 1px solid #5b8aff;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .parse-btn:hover {
+    background: #5b8aff;
+    color: #fff;
+  }
+
+  .paste-hint {
+    font-size: 0.75rem;
+    color: #666;
+    margin-bottom: 12px;
+    line-height: 1.5;
+  }
 </style>
 </head>
 <body>
@@ -290,6 +348,16 @@
     <a href="index.html" class="nav-link">← CSV変換へ</a>
   </div>
   <p class="subtitle">修理返送など、手動で配送先を登録してB2用CSVを作成</p>
+
+  <div class="paste-section">
+    <h3 class="form-title">📋 まとめて貼り付け（自動振り分け）</h3>
+    <div class="paste-hint">
+      住所・名前・電話番号をまとめて貼り付けると、自動的に各フィールドに振り分けます。<br>
+      例: 〒123-4567 東京都渋谷区神宮前1-2-3 サンプルマンション101 山田太郎 090-1234-5678
+    </div>
+    <textarea class="paste-textarea" id="pasteArea" placeholder="住所・名前・電話番号をここに貼り付け&#10;&#10;例:&#10;〒123-4567&#10;東京都渋谷区神宮前1-2-3&#10;サンプルマンション101&#10;山田 太郎&#10;090-1234-5678"></textarea>
+    <button class="parse-btn" id="parseBtn">⚡ 自動振り分け</button>
+  </div>
 
   <div class="form-section">
     <h3 class="form-title">配送先情報を入力</h3>
@@ -609,10 +677,90 @@ function generateCSV() {
   URL.revokeObjectURL(url);
 }
 
+// Parse pasted text and auto-fill form
+function parseAndFill() {
+  const text = document.getElementById('pasteArea').value;
+  if (!text.trim()) return;
+
+  // Extract postal code: 〒123-4567 or 1234567
+  const zipMatch = text.match(/〒?\s*(\d{3})-?(\d{4})/);
+  if (zipMatch) {
+    document.getElementById('zip').value = zipMatch[1] + zipMatch[2];
+  }
+
+  // Extract phone number: 090-1234-5678 or 09012345678
+  const phoneMatch = text.match(/(\d{2,4})-?(\d{2,4})-?(\d{4})/);
+  if (phoneMatch) {
+    document.getElementById('phone').value = phoneMatch[1] + phoneMatch[2] + phoneMatch[3];
+  }
+
+  // Extract address with prefecture
+  const prefectures = ['北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県',
+    '茨城県', '栃木県', '群馬県', '埼玉県', '千葉県', '東京都', '神奈川県',
+    '新潟県', '富山県', '石川県', '福井県', '山梨県', '長野県', '岐阜県',
+    '静岡県', '愛知県', '三重県', '滋賀県', '京都府', '大阪府', '兵庫県',
+    '奈良県', '和歌山県', '鳥取県', '島根県', '岡山県', '広島県', '山口県',
+    '徳島県', '香川県', '愛媛県', '高知県', '福岡県', '佐賀県', '長崎県',
+    '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県'];
+
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l);
+
+  let addressLine = '';
+  let buildingLine = '';
+  let nameCandidate = '';
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Skip lines that are just postal code or phone
+    if (/^〒?\s*\d{3}-?\d{4}$/.test(line)) continue;
+    if (/^\d{2,4}-?\d{2,4}-?\d{4}$/.test(line)) continue;
+
+    // Check if line starts with prefecture
+    const startsWithPref = prefectures.some(p => line.startsWith(p));
+
+    if (startsWithPref && !addressLine) {
+      // This is the main address line
+      addressLine = line;
+    } else if (addressLine && !buildingLine && /[ビルマンションハイツ荘]|[0-9０-９]+号/.test(line)) {
+      // This looks like a building name
+      buildingLine = line;
+    } else if (!startsWithPref && !nameCandidate && line.length < 20 && !/[0-9０-９]/.test(line)) {
+      // This might be a name (no numbers, short)
+      nameCandidate = line;
+    }
+  }
+
+  if (addressLine) {
+    document.getElementById('address1').value = addressLine;
+  }
+
+  if (buildingLine) {
+    document.getElementById('address2').value = buildingLine;
+  }
+
+  if (nameCandidate) {
+    document.getElementById('name').value = nameCandidate;
+  }
+
+  // Clear paste area
+  document.getElementById('pasteArea').value = '';
+
+  // Focus on first empty required field
+  if (!document.getElementById('name').value) {
+    document.getElementById('name').focus();
+  } else if (!document.getElementById('itemName').value) {
+    document.getElementById('itemName').focus();
+  }
+
+  hideError();
+}
+
 // Event listeners
 document.getElementById('addBtn').addEventListener('click', addDelivery);
 document.getElementById('downloadBtn').addEventListener('click', generateCSV);
 document.getElementById('clearBtn').addEventListener('click', clearAll);
+document.getElementById('parseBtn').addEventListener('click', parseAndFill);
 
 // Enter key support
 document.querySelectorAll('.form-input').forEach(input => {
