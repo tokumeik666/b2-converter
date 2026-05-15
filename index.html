@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2クラウド CSV変換</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: #0a0a0f;
+    color: #e8e8ec;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+  }
+
+  .container {
+    max-width: 640px;
+    width: 100%;
+  }
+
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    letter-spacing: -0.02em;
+  }
+
+  .subtitle {
+    color: #888;
+    font-size: 0.85rem;
+    margin-bottom: 32px;
+  }
+
+  .drop-zone {
+    border: 2px dashed #333;
+    border-radius: 16px;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #111118;
+    position: relative;
+  }
+
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: #5b8aff;
+    background: #12121f;
+  }
+
+  .drop-zone-icon {
+    font-size: 2.4rem;
+    margin-bottom: 12px;
+  }
+
+  .drop-zone-text {
+    font-size: 0.95rem;
+    color: #aaa;
+  }
+
+  .drop-zone-hint {
+    font-size: 0.78rem;
+    color: #555;
+    margin-top: 8px;
+  }
+
+  .drop-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .settings {
+    margin-top: 24px;
+    background: #111118;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #222;
+  }
+
+  .settings h3 {
+    font-size: 0.85rem;
+    color: #888;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #1a1a22;
+  }
+
+  .setting-row:last-child { border-bottom: none; }
+
+  .setting-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .setting-value {
+    font-size: 0.85rem;
+    color: #5b8aff;
+    background: #1a1a2e;
+    padding: 4px 12px;
+    border-radius: 6px;
+  }
+
+  .result {
+    margin-top: 24px;
+    display: none;
+  }
+
+  .result.show { display: block; }
+
+  .result-card {
+    background: #111118;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #222;
+  }
+
+  .result-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .result-icon {
+    font-size: 1.5rem;
+  }
+
+  .result-title {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .result-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .stat {
+    background: #0a0a14;
+    border-radius: 8px;
+    padding: 12px;
+  }
+
+  .stat-num {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #5b8aff;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    color: #666;
+    margin-top: 2px;
+  }
+
+  .download-btn {
+    width: 100%;
+    padding: 14px;
+    background: #5b8aff;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .download-btn:hover {
+    background: #4a79ee;
+  }
+
+  .changes-list {
+    margin-bottom: 16px;
+  }
+
+  .change-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    font-size: 0.85rem;
+    color: #aaa;
+  }
+
+  .change-check {
+    color: #4ade80;
+    font-weight: bold;
+  }
+
+  .error {
+    margin-top: 24px;
+    background: #1a1115;
+    border: 1px solid #442233;
+    border-radius: 12px;
+    padding: 16px;
+    color: #ff6b6b;
+    font-size: 0.9rem;
+    display: none;
+  }
+
+  .error.show { display: block; }
+
+  .reset-btn {
+    margin-top: 16px;
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    color: #666;
+    border: 1px solid #333;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .reset-btn:hover {
+    color: #aaa;
+    border-color: #555;
+  }
+
+  .mapping-section {
+    margin-top: 24px;
+    background: #111118;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #222;
+  }
+
+  .mapping-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .mapping-title {
+    font-size: 0.85rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .mapping-count {
+    font-size: 0.75rem;
+    color: #5b8aff;
+    background: #1a1a2e;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  .mapping-form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .mapping-input {
+    flex: 1;
+    padding: 10px 12px;
+    background: #0a0a14;
+    border: 1px solid #333;
+    border-radius: 8px;
+    color: #e8e8ec;
+    font-size: 0.85rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .mapping-input:focus {
+    border-color: #5b8aff;
+  }
+
+  .mapping-input::placeholder {
+    color: #555;
+  }
+
+  .add-btn {
+    padding: 10px 20px;
+    background: #5b8aff;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+
+  .add-btn:hover {
+    background: #4a79ee;
+  }
+
+  .add-btn:disabled {
+    background: #333;
+    cursor: not-allowed;
+  }
+
+  .mapping-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .mapping-list::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .mapping-list::-webkit-scrollbar-track {
+    background: #0a0a14;
+    border-radius: 3px;
+  }
+
+  .mapping-list::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 3px;
+  }
+
+  .mapping-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: #0a0a14;
+    border: 1px solid #222;
+    border-radius: 8px;
+    font-size: 0.85rem;
+  }
+
+  .mapping-from {
+    flex: 1;
+    color: #aaa;
+  }
+
+  .mapping-arrow {
+    color: #555;
+    font-size: 0.9rem;
+  }
+
+  .mapping-to {
+    flex: 1;
+    color: #5b8aff;
+    font-weight: 600;
+  }
+
+  .delete-btn {
+    padding: 4px 8px;
+    background: transparent;
+    color: #666;
+    border: 1px solid #333;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .delete-btn:hover {
+    color: #ff6b6b;
+    border-color: #442233;
+    background: #1a1115;
+  }
+
+  .empty-mapping {
+    text-align: center;
+    color: #555;
+    font-size: 0.85rem;
+    padding: 20px;
+  }
+
+  .share-section {
+    margin-top: 12px;
+    padding-top: 16px;
+    border-top: 1px solid #222;
+  }
+
+  .share-btn {
+    width: 100%;
+    padding: 10px;
+    background: transparent;
+    color: #5b8aff;
+    border: 1px solid #5b8aff;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .share-btn:hover {
+    background: #5b8aff;
+    color: #fff;
+  }
+
+  .share-btn:disabled {
+    border-color: #333;
+    color: #555;
+    cursor: not-allowed;
+  }
+
+  .share-url-box {
+    margin-top: 12px;
+    padding: 12px;
+    background: #0a0a14;
+    border: 1px solid #333;
+    border-radius: 8px;
+    display: none;
+  }
+
+  .share-url-box.show {
+    display: block;
+  }
+
+  .share-url-label {
+    font-size: 0.75rem;
+    color: #888;
+    margin-bottom: 6px;
+  }
+
+  .share-url-input {
+    width: 100%;
+    padding: 8px;
+    background: #111118;
+    border: 1px solid #444;
+    border-radius: 6px;
+    color: #5b8aff;
+    font-size: 0.8rem;
+    font-family: 'Monaco', 'Courier New', monospace;
+    outline: none;
+  }
+
+  .copy-btn {
+    margin-top: 8px;
+    width: 100%;
+    padding: 8px;
+    background: #1a1a2e;
+    color: #aaa;
+    border: 1px solid #333;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .copy-btn:hover {
+    background: #252540;
+    color: #fff;
+  }
+
+  .copy-btn.copied {
+    background: #1a3a1a;
+    color: #4ade80;
+    border-color: #2a5a2a;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>B2クラウド CSV変換</h1>
+  <p class="subtitle">STORESエクスポート → B2クラウドインポート用に自動修正</p>
+
+  <div class="drop-zone" id="dropZone">
+    <input type="file" accept=".csv" id="fileInput">
+    <div class="drop-zone-icon">📄</div>
+    <div class="drop-zone-text">CSVファイルをドラッグ＆ドロップ</div>
+    <div class="drop-zone-hint">またはクリックして選択</div>
+  </div>
+
+  <div class="settings">
+    <h3>自動補完する項目</h3>
+    <div class="setting-row">
+      <span class="setting-label">送り状種類</span>
+      <span class="setting-value">0（発払い）</span>
+    </div>
+  </div>
+
+  <div class="mapping-section">
+    <div class="mapping-header">
+      <h3 class="mapping-title">商品名変換マッピング</h3>
+      <span class="mapping-count" id="mappingCount">0件登録済み</span>
+    </div>
+    <div class="mapping-form">
+      <input type="text" class="mapping-input" id="storesName" placeholder="STORES商品名（変換前）" />
+      <input type="text" class="mapping-input" id="b2Name" placeholder="B2用商品名（変換後）" />
+      <button class="add-btn" id="addMappingBtn">追加</button>
+    </div>
+    <div class="mapping-list" id="mappingList">
+      <div class="empty-mapping">商品名マッピングが登録されていません</div>
+    </div>
+    <div class="share-section">
+      <button class="share-btn" id="shareBtn" disabled>📤 共有リンクを生成（外注用）</button>
+      <div class="share-url-box" id="shareUrlBox">
+        <div class="share-url-label">このURLを外注さんに送ってください:</div>
+        <input type="text" class="share-url-input" id="shareUrlInput" readonly />
+        <button class="copy-btn" id="copyBtn">📋 URLをコピー</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="result" id="result">
+    <div class="result-card">
+      <div class="result-header">
+        <span class="result-icon">✅</span>
+        <span class="result-title">変換完了</span>
+      </div>
+      <div class="result-stats">
+        <div class="stat">
+          <div class="stat-num" id="totalRows">0</div>
+          <div class="stat-label">注文件数</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num" id="fixedCount">0</div>
+          <div class="stat-label">修正箇所</div>
+        </div>
+      </div>
+      <div class="changes-list" id="changesList"></div>
+      <button class="download-btn" id="downloadBtn">ダウンロード（B2用CSV）</button>
+      <button class="reset-btn" id="resetBtn">別のCSVを変換する</button>
+    </div>
+  </div>
+
+  <div class="error" id="error"></div>
+</div>
+
+<script>
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const resultDiv = document.getElementById('result');
+const errorDiv = document.getElementById('error');
+let convertedCSV = null;
+let outputFilename = 'b2_import.csv';
+
+// Product name mapping management
+let productMappings = [];
+
+function loadMappings() {
+  // First, check URL parameters for shared mappings
+  const urlParams = new URLSearchParams(window.location.search);
+  const sharedData = urlParams.get('mappings');
+
+  if (sharedData) {
+    try {
+      const decoded = atob(sharedData);
+      const imported = JSON.parse(decoded);
+      if (Array.isArray(imported) && imported.length > 0) {
+        // Merge with existing mappings (avoid duplicates)
+        imported.forEach(newMapping => {
+          const exists = productMappings.some(m => m.from === newMapping.from);
+          if (!exists) {
+            productMappings.push(newMapping);
+          }
+        });
+        saveMappings();
+        // Show success message
+        setTimeout(() => {
+          const count = imported.length;
+          alert(`✅ ${count}件のマッピングをインポートしました！`);
+        }, 500);
+      }
+    } catch (e) {
+      console.error('Failed to import mappings:', e);
+    }
+  } else {
+    // Load from localStorage
+    const saved = localStorage.getItem('b2ProductMappings');
+    if (saved) {
+      try {
+        productMappings = JSON.parse(saved);
+      } catch (e) {
+        productMappings = [];
+      }
+    }
+  }
+  renderMappings();
+}
+
+function saveMappings() {
+  localStorage.setItem('b2ProductMappings', JSON.stringify(productMappings));
+  renderMappings();
+}
+
+function addMapping(from, to) {
+  if (!from.trim() || !to.trim()) return;
+  // Check for duplicates
+  const exists = productMappings.some(m => m.from === from.trim());
+  if (exists) {
+    showError('同じSTORES商品名が既に登録されています');
+    return;
+  }
+  productMappings.push({ from: from.trim(), to: to.trim() });
+  saveMappings();
+  document.getElementById('storesName').value = '';
+  document.getElementById('b2Name').value = '';
+  errorDiv.classList.remove('show');
+}
+
+function deleteMapping(index) {
+  productMappings.splice(index, 1);
+  saveMappings();
+}
+
+function renderMappings() {
+  const list = document.getElementById('mappingList');
+  const count = document.getElementById('mappingCount');
+  const shareBtn = document.getElementById('shareBtn');
+
+  count.textContent = `${productMappings.length}件登録済み`;
+
+  // Enable/disable share button
+  shareBtn.disabled = productMappings.length === 0;
+
+  if (productMappings.length === 0) {
+    list.innerHTML = '<div class="empty-mapping">商品名マッピングが登録されていません</div>';
+    return;
+  }
+
+  list.innerHTML = productMappings.map((mapping, index) => `
+    <div class="mapping-item">
+      <div class="mapping-from">${escapeHTML(mapping.from)}</div>
+      <div class="mapping-arrow">→</div>
+      <div class="mapping-to">${escapeHTML(mapping.to)}</div>
+      <button class="delete-btn" onclick="deleteMapping(${index})">削除</button>
+    </div>
+  `).join('');
+}
+
+function escapeHTML(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// Initialize mappings on load
+loadMappings();
+
+// Add mapping button handler
+document.getElementById('addMappingBtn').addEventListener('click', () => {
+  const from = document.getElementById('storesName').value;
+  const to = document.getElementById('b2Name').value;
+  addMapping(from, to);
+});
+
+// Enter key to add mapping
+document.getElementById('storesName').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') document.getElementById('b2Name').focus();
+});
+
+document.getElementById('b2Name').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    const from = document.getElementById('storesName').value;
+    const to = document.getElementById('b2Name').value;
+    addMapping(from, to);
+  }
+});
+
+// Generate share link
+document.getElementById('shareBtn').addEventListener('click', () => {
+  if (productMappings.length === 0) return;
+
+  const json = JSON.stringify(productMappings);
+  const encoded = btoa(json);
+  const baseUrl = window.location.origin + window.location.pathname;
+  const shareUrl = `${baseUrl}?mappings=${encoded}`;
+
+  const urlInput = document.getElementById('shareUrlInput');
+  const urlBox = document.getElementById('shareUrlBox');
+
+  urlInput.value = shareUrl;
+  urlBox.classList.add('show');
+});
+
+// Copy URL to clipboard
+document.getElementById('copyBtn').addEventListener('click', () => {
+  const urlInput = document.getElementById('shareUrlInput');
+  const copyBtn = document.getElementById('copyBtn');
+
+  urlInput.select();
+  urlInput.setSelectionRange(0, 99999); // For mobile
+
+  navigator.clipboard.writeText(urlInput.value).then(() => {
+    copyBtn.textContent = '✅ コピーしました！';
+    copyBtn.classList.add('copied');
+
+    setTimeout(() => {
+      copyBtn.textContent = '📋 URLをコピー';
+      copyBtn.classList.remove('copied');
+    }, 2000);
+  }).catch(() => {
+    // Fallback for older browsers
+    document.execCommand('copy');
+    copyBtn.textContent = '✅ コピーしました！';
+    copyBtn.classList.add('copied');
+
+    setTimeout(() => {
+      copyBtn.textContent = '📋 URLをコピー';
+      copyBtn.classList.remove('copied');
+    }, 2000);
+  });
+});
+
+// Drag & Drop
+dropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropZone.classList.add('dragover');
+});
+
+dropZone.addEventListener('dragleave', () => {
+  dropZone.classList.remove('dragover');
+});
+
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+});
+
+fileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) processFile(file);
+});
+
+function parseCSV(text) {
+  const rows = [];
+  let current = '';
+  let inQuotes = false;
+  let row = [];
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const next = text[i + 1];
+
+    if (inQuotes) {
+      if (char === '"' && next === '"') {
+        current += '"';
+        i++;
+      } else if (char === '"') {
+        inQuotes = false;
+      } else {
+        current += char;
+      }
+    } else {
+      if (char === '"') {
+        inQuotes = true;
+      } else if (char === ',') {
+        row.push(current);
+        current = '';
+      } else if (char === '\n' || (char === '\r' && next === '\n')) {
+        if (char === '\r') i++;
+        row.push(current);
+        current = '';
+        rows.push(row);
+        row = [];
+      } else {
+        current += char;
+      }
+    }
+  }
+  // Last field/row
+  if (current || row.length > 0) {
+    row.push(current);
+    rows.push(row);
+  }
+  return rows;
+}
+
+function escapeCSVField(val) {
+  if (val === null || val === undefined) return '""';
+  const str = String(val);
+  // Always quote to prevent Numbers/Excel issues
+  return '"' + str.replace(/"/g, '""') + '"';
+}
+
+function rowToCSV(row, numCols) {
+  // Ensure consistent column count
+  while (row.length < numCols) row.push('');
+  return row.slice(0, numCols).map(escapeCSVField).join(',');
+}
+
+function processFile(file) {
+  if (!file.name.endsWith('.csv')) {
+    showError('CSVファイルを選択してください');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      // Try UTF-8 first, strip BOM
+      let text = e.target.result;
+      if (text.charCodeAt(0) === 0xFEFF) {
+        text = text.slice(1);
+      }
+
+      const rows = parseCSV(text);
+      if (rows.length < 2) {
+        showError('データが見つかりません');
+        return;
+      }
+
+      const header = rows[0];
+      const numCols = header.length;
+      const dataRows = rows.slice(1).filter(r => r.length > 1);
+
+      // Find column indices by header first line
+      const getColIndex = (name) => {
+        return header.findIndex(h => h.split('\n')[0].trim() === name);
+      };
+
+      const col送り状種類 = getColIndex('送り状種類');
+      const col商品名 = getColIndex('商品名');
+
+      if (col送り状種類 === -1) {
+        showError('B2クラウドのCSVフォーマットではないようです。STORESからヤマト用にエクスポートしたCSVを使ってください。');
+        return;
+      }
+
+      let fixCount = 0;
+      let rowCount = 0;
+      let 送り状Fixed = 0;
+      let 商品名Fixed = 0;
+
+      // Process data rows
+      for (let i = 0; i < dataRows.length; i++) {
+        const row = dataRows[i];
+        // Ensure row has enough columns
+        while (row.length < numCols) row.push('');
+
+        // Skip completely empty rows
+        const hasData = row.some((v, idx) => idx < 95 && v.trim() !== '');
+        if (!hasData) continue;
+
+        rowCount++;
+
+        // Fix 送り状種類: set to 0 if empty
+        if (col送り状種類 >= 0 && !row[col送り状種類].trim()) {
+          row[col送り状種類] = '0';
+          送り状Fixed++;
+          fixCount++;
+        }
+
+        // Apply product name mapping
+        if (col商品名 >= 0 && row[col商品名]) {
+          const originalName = row[col商品名].trim();
+          const mapping = productMappings.find(m => m.from === originalName);
+          if (mapping) {
+            row[col商品名] = mapping.to;
+            商品名Fixed++;
+            fixCount++;
+          }
+        }
+      }
+
+      // Build output CSV with BOM for Excel/B2 compatibility
+      const BOM = '\uFEFF';
+      const lines = [];
+      lines.push(rowToCSV(header, numCols));
+      for (const row of dataRows) {
+        lines.push(rowToCSV(row, numCols));
+      }
+      convertedCSV = BOM + lines.join('\r\n');
+
+      // Generate filename
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+      outputFilename = `b2_import_${dateStr}.csv`;
+
+      // Show results
+      document.getElementById('totalRows').textContent = rowCount;
+      document.getElementById('fixedCount').textContent = fixCount;
+
+      const changesList = document.getElementById('changesList');
+      changesList.innerHTML = '';
+
+      if (送り状Fixed > 0) {
+        addChange(changesList, `送り状種類 → 0（発払い）を ${送り状Fixed}件に自動入力`);
+      }
+      if (商品名Fixed > 0) {
+        addChange(changesList, `商品名を ${商品名Fixed}件変換（登録済みマッピング適用）`);
+      }
+      addChange(changesList, `全フィールドをクォート処理（ナンバーズ対策）`);
+      addChange(changesList, `改行コードをCR+LFに統一（B2互換）`);
+
+      resultDiv.classList.add('show');
+      errorDiv.classList.remove('show');
+
+    } catch (err) {
+      showError('CSV解析エラー: ' + err.message);
+    }
+  };
+
+  reader.readAsText(file, 'UTF-8');
+}
+
+function addChange(container, text) {
+  const div = document.createElement('div');
+  div.className = 'change-item';
+  div.innerHTML = `<span class="change-check">✓</span> ${text}`;
+  container.appendChild(div);
+}
+
+function showError(msg) {
+  errorDiv.textContent = msg;
+  errorDiv.classList.add('show');
+  resultDiv.classList.remove('show');
+}
+
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  if (!convertedCSV) return;
+  const blob = new Blob([convertedCSV], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = outputFilename;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  resultDiv.classList.remove('show');
+  errorDiv.classList.remove('show');
+  fileInput.value = '';
+  convertedCSV = null;
+});
+</script>
+
+</body>
+</html>
