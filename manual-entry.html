@@ -383,8 +383,8 @@
         <input type="text" class="form-input" id="zip" placeholder="1234567" maxlength="7" />
       </div>
       <div class="form-field">
-        <label class="form-label">お届け先電話番号（ハイフンなし）*</label>
-        <input type="text" class="form-input" id="phone" placeholder="09012345678" />
+        <label class="form-label">お届け先電話番号（ハイフンなし）</label>
+        <input type="text" class="form-input" id="phone" placeholder="09012345678（任意）" />
       </div>
       <div class="form-field full">
         <label class="form-label">お届け先住所 *</label>
@@ -519,7 +519,7 @@ function addDelivery() {
   const memo = document.getElementById('memo').value.trim();
 
   // Validation
-  if (!name || !zip || !phone || !address1 || !itemName) {
+  if (!name || !zip || !address1 || !itemName) {
     showError('必須項目をすべて入力してください');
     return;
   }
@@ -529,7 +529,7 @@ function addDelivery() {
     return;
   }
 
-  if (!/^\d+$/.test(phone)) {
+  if (phone && !/^\d+$/.test(phone)) {
     showError('電話番号は数字のみで入力してください（ハイフンなし）');
     return;
   }
