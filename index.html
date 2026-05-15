@@ -561,7 +561,17 @@ let outputFilename = 'b2_import.csv';
 let productMappings = [];
 
 function loadMappings() {
-  // First, check URL parameters for shared mappings
+  // First, load existing mappings from localStorage
+  const saved = localStorage.getItem('b2ProductMappings');
+  if (saved) {
+    try {
+      productMappings = JSON.parse(saved);
+    } catch (e) {
+      productMappings = [];
+    }
+  }
+
+  // Then, check URL parameters for shared mappings and merge
   const urlParams = new URLSearchParams(window.location.search);
   const sharedData = urlParams.get('mappings');
 
@@ -570,34 +580,28 @@ function loadMappings() {
       const decoded = atob(sharedData);
       const imported = JSON.parse(decoded);
       if (Array.isArray(imported) && imported.length > 0) {
+        let newCount = 0;
         // Merge with existing mappings (avoid duplicates)
         imported.forEach(newMapping => {
           const exists = productMappings.some(m => m.from === newMapping.from);
           if (!exists) {
             productMappings.push(newMapping);
+            newCount++;
           }
         });
-        saveMappings();
-        // Show success message
-        setTimeout(() => {
-          const count = imported.length;
-          alert(`✅ ${count}件のマッピングをインポートしました！`);
-        }, 500);
+        if (newCount > 0) {
+          saveMappings();
+          // Show success message
+          setTimeout(() => {
+            alert(`✅ ${newCount}件の新しいマッピングをインポートしました！（合計: ${productMappings.length}件）`);
+          }, 500);
+        }
       }
     } catch (e) {
       console.error('Failed to import mappings:', e);
     }
-  } else {
-    // Load from localStorage
-    const saved = localStorage.getItem('b2ProductMappings');
-    if (saved) {
-      try {
-        productMappings = JSON.parse(saved);
-      } catch (e) {
-        productMappings = [];
-      }
-    }
   }
+
   renderMappings();
 }
 
