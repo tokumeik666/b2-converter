@@ -503,12 +503,12 @@
 
   <div class="mapping-section">
     <div class="mapping-header">
-      <h3 class="mapping-title">商品名変換マッピング</h3>
+      <h3 class="mapping-title">品名変換マッピング</h3>
       <span class="mapping-count" id="mappingCount">0件登録済み</span>
     </div>
     <div class="mapping-form">
-      <input type="text" class="mapping-input" id="storesName" placeholder="STORES商品名（変換前）" />
-      <input type="text" class="mapping-input" id="b2Name" placeholder="B2用商品名（変換後）" />
+      <input type="text" class="mapping-input" id="storesName" placeholder="CSV内の品名（変換前）例: 財結" />
+      <input type="text" class="mapping-input" id="b2Name" placeholder="変換後の品名 例: アクセサリー（財）" />
       <button class="add-btn" id="addMappingBtn">追加</button>
     </div>
     <div class="mapping-list" id="mappingList">
@@ -611,7 +611,7 @@ function addMapping(from, to) {
   // Check for duplicates
   const exists = productMappings.some(m => m.from === from.trim());
   if (exists) {
-    showError('同じSTORES商品名が既に登録されています');
+    showError('同じ品名が既に登録されています');
     return;
   }
   productMappings.push({ from: from.trim(), to: to.trim() });
@@ -837,8 +837,10 @@ function processFile(file) {
       const col送り状種類 = getColIndex('送り状種類');
 
       // Try multiple column names for product name
-      let col商品名 = getColIndex('商品名');
+      let col商品名 = getColIndex('品名１'); // 全角の１
+      if (col商品名 === -1) col商品名 = getColIndex('品名1'); // 半角の1
       if (col商品名 === -1) col商品名 = getColIndex('品名');
+      if (col商品名 === -1) col商品名 = getColIndex('商品名');
       if (col商品名 === -1) col商品名 = getColIndex('商品名1');
 
       if (col送り状種類 === -1) {
@@ -848,8 +850,8 @@ function processFile(file) {
 
       // Debug: log which columns were found
       console.log('送り状種類カラム:', col送り状種類);
-      console.log('商品名カラム:', col商品名);
-      console.log('ヘッダー:', header.slice(0, 20));
+      console.log('品名カラム:', col商品名, col商品名 >= 0 ? `"${header[col商品名].split('\n')[0]}"` : '見つかりません');
+      console.log('登録済みマッピング:', productMappings.length, '件');
 
       let fixCount = 0;
       let rowCount = 0;
@@ -880,13 +882,13 @@ function processFile(file) {
           const originalName = row[col商品名].trim();
           const mapping = productMappings.find(m => m.from === originalName);
           if (mapping) {
-            console.log(`商品名変換: "${originalName}" → "${mapping.to}"`);
+            console.log(`✓ 品名変換: "${originalName}" → "${mapping.to}"`);
             row[col商品名] = mapping.to;
             商品名Fixed++;
             fixCount++;
-          } else if (rowCount <= 3) {
-            // Debug: show first 3 product names that don't match
-            console.log(`マッピングなし: "${originalName}"`);
+          } else if (rowCount <= 5 && productMappings.length > 0) {
+            // Debug: show first 5 product names that don't match
+            console.log(`○ マッピングなし: "${originalName}"`);
           }
         }
       }
@@ -916,11 +918,11 @@ function processFile(file) {
         addChange(changesList, `送り状種類 → 0（発払い）を ${送り状Fixed}件に自動入力`);
       }
       if (商品名Fixed > 0) {
-        addChange(changesList, `商品名を ${商品名Fixed}件変換（登録済みマッピング適用）`);
+        addChange(changesList, `品名を ${商品名Fixed}件変換（登録済みマッピング適用）`);
       } else if (productMappings.length > 0 && col商品名 === -1) {
-        addChange(changesList, `⚠️ 商品名カラムが見つかりません（変換スキップ）`);
+        addChange(changesList, `⚠️ 品名カラムが見つかりません（変換スキップ）`);
       } else if (productMappings.length > 0) {
-        addChange(changesList, `商品名マッピング登録済み（該当なし）`);
+        addChange(changesList, `品名マッピング登録済み（該当なし）`);
       }
       addChange(changesList, `全フィールドをクォート処理（ナンバーズ対策）`);
       addChange(changesList, `改行コードをCR+LFに統一（B2互換）`);
