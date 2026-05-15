@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>手動入力 - B2クラウド送り状作成</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: #0a0a0f;
+    color: #e8e8ec;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+  }
+
+  .container {
+    max-width: 900px;
+    width: 100%;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+  }
+
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .nav-link {
+    color: #5b8aff;
+    text-decoration: none;
+    font-size: 0.85rem;
+    padding: 8px 16px;
+    border: 1px solid #5b8aff;
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+
+  .nav-link:hover {
+    background: #5b8aff;
+    color: #fff;
+  }
+
+  .subtitle {
+    color: #888;
+    font-size: 0.85rem;
+    margin-bottom: 32px;
+  }
+
+  .form-section {
+    background: #111118;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid #222;
+    margin-bottom: 24px;
+  }
+
+  .form-title {
+    font-size: 0.85rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 20px;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-field.full {
+    grid-column: 1 / -1;
+  }
+
+  .form-label {
+    font-size: 0.8rem;
+    color: #aaa;
+    font-weight: 600;
+  }
+
+  .form-input {
+    padding: 10px 12px;
+    background: #0a0a14;
+    border: 1px solid #333;
+    border-radius: 8px;
+    color: #e8e8ec;
+    font-size: 0.9rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .form-input:focus {
+    border-color: #5b8aff;
+  }
+
+  .form-input::placeholder {
+    color: #555;
+  }
+
+  .add-btn {
+    width: 100%;
+    padding: 12px;
+    background: #5b8aff;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .add-btn:hover {
+    background: #4a79ee;
+  }
+
+  .list-section {
+    background: #111118;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid #222;
+    margin-bottom: 24px;
+  }
+
+  .list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .list-count {
+    font-size: 0.75rem;
+    color: #5b8aff;
+    background: #1a1a2e;
+    padding: 4px 12px;
+    border-radius: 6px;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    margin-bottom: 16px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+
+  th {
+    text-align: left;
+    padding: 12px 8px;
+    color: #888;
+    font-weight: 600;
+    border-bottom: 1px solid #222;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 12px 8px;
+    border-bottom: 1px solid #1a1a22;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  .actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  .edit-btn, .delete-btn {
+    padding: 4px 10px;
+    border: 1px solid #333;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+    color: #aaa;
+    font-family: inherit;
+  }
+
+  .edit-btn:hover {
+    color: #5b8aff;
+    border-color: #5b8aff;
+  }
+
+  .delete-btn:hover {
+    color: #ff6b6b;
+    border-color: #442233;
+    background: #1a1115;
+  }
+
+  .empty-list {
+    text-align: center;
+    color: #555;
+    padding: 40px 20px;
+    font-size: 0.9rem;
+  }
+
+  .download-section {
+    display: flex;
+    gap: 12px;
+  }
+
+  .download-btn {
+    flex: 1;
+    padding: 14px;
+    background: #5b8aff;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .download-btn:hover {
+    background: #4a79ee;
+  }
+
+  .download-btn:disabled {
+    background: #333;
+    cursor: not-allowed;
+  }
+
+  .clear-btn {
+    padding: 14px 24px;
+    background: transparent;
+    color: #666;
+    border: 1px solid #333;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .clear-btn:hover {
+    color: #ff6b6b;
+    border-color: #442233;
+  }
+
+  .error {
+    margin-top: 24px;
+    background: #1a1115;
+    border: 1px solid #442233;
+    border-radius: 12px;
+    padding: 16px;
+    color: #ff6b6b;
+    font-size: 0.9rem;
+    display: none;
+  }
+
+  .error.show { display: block; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>手動入力 - B2送り状作成</h1>
+    <a href="index.html" class="nav-link">← CSV変換へ</a>
+  </div>
+  <p class="subtitle">修理返送など、手動で配送先を登録してB2用CSVを作成</p>
+
+  <div class="form-section">
+    <h3 class="form-title">配送先情報を入力</h3>
+    <div class="form-grid">
+      <div class="form-field">
+        <label class="form-label">お客様管理番号</label>
+        <input type="text" class="form-input" id="customerCode" placeholder="任意の管理番号" />
+      </div>
+      <div class="form-field">
+        <label class="form-label">送り状種類 *</label>
+        <select class="form-input" id="slipType">
+          <option value="0">0: 発払い</option>
+          <option value="2">2: 着払い</option>
+          <option value="7">7: DM便</option>
+        </select>
+      </div>
+      <div class="form-field full">
+        <label class="form-label">お届け先名 *</label>
+        <input type="text" class="form-input" id="name" placeholder="山田 太郎" />
+      </div>
+      <div class="form-field">
+        <label class="form-label">お届け先郵便番号（ハイフンなし）*</label>
+        <input type="text" class="form-input" id="zip" placeholder="1234567" maxlength="7" />
+      </div>
+      <div class="form-field">
+        <label class="form-label">お届け先電話番号（ハイフンなし）*</label>
+        <input type="text" class="form-input" id="phone" placeholder="09012345678" />
+      </div>
+      <div class="form-field full">
+        <label class="form-label">お届け先住所 *</label>
+        <input type="text" class="form-input" id="address1" placeholder="東京都渋谷区神宮前1-2-3" />
+      </div>
+      <div class="form-field full">
+        <label class="form-label">お届け先アパートマンション名</label>
+        <input type="text" class="form-input" id="address2" placeholder="サンプルマンション101" />
+      </div>
+      <div class="form-field full">
+        <label class="form-label">品名１ *</label>
+        <input type="text" class="form-input" id="itemName" placeholder="アクセサリー（修理品）" />
+      </div>
+      <div class="form-field full">
+        <label class="form-label">記事（メモ）</label>
+        <input type="text" class="form-input" id="memo" placeholder="修理完了品の返送" />
+      </div>
+    </div>
+    <button class="add-btn" id="addBtn">追加</button>
+  </div>
+
+  <div class="list-section">
+    <div class="list-header">
+      <h3 class="form-title">配送先リスト</h3>
+      <span class="list-count" id="listCount">0件</span>
+    </div>
+    <div class="table-wrapper">
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th>管理番号</th>
+            <th>種類</th>
+            <th>お届け先名</th>
+            <th>郵便番号</th>
+            <th>住所</th>
+            <th>電話番号</th>
+            <th>品名</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr>
+            <td colspan="8" class="empty-list">配送先が登録されていません</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="download-section">
+      <button class="download-btn" id="downloadBtn" disabled>B2用CSVをダウンロード</button>
+      <button class="clear-btn" id="clearBtn">全件削除</button>
+    </div>
+  </div>
+
+  <div class="error" id="error"></div>
+</div>
+
+<script>
+let deliveries = [];
+let editingIndex = -1;
+
+// Load from localStorage
+function loadDeliveries() {
+  const saved = localStorage.getItem('b2ManualDeliveries');
+  if (saved) {
+    try {
+      deliveries = JSON.parse(saved);
+    } catch (e) {
+      deliveries = [];
+    }
+  }
+  renderTable();
+}
+
+// Save to localStorage
+function saveDeliveries() {
+  localStorage.setItem('b2ManualDeliveries', JSON.stringify(deliveries));
+  renderTable();
+}
+
+// Render table
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  const count = document.getElementById('listCount');
+  const downloadBtn = document.getElementById('downloadBtn');
+
+  count.textContent = `${deliveries.length}件`;
+  downloadBtn.disabled = deliveries.length === 0;
+
+  if (deliveries.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-list">配送先が登録されていません</td></tr>';
+    return;
+  }
+
+  const slipTypeLabels = { '0': '発払い', '2': '着払い', '7': 'DM便' };
+
+  tbody.innerHTML = deliveries.map((d, index) => `
+    <tr>
+      <td>${escapeHTML(d.customerCode || '-')}</td>
+      <td>${slipTypeLabels[d.slipType] || '発払い'}</td>
+      <td>${escapeHTML(d.name)}</td>
+      <td>${escapeHTML(d.zip)}</td>
+      <td>${escapeHTML(d.address1)}${d.address2 ? ' ' + escapeHTML(d.address2) : ''}</td>
+      <td>${escapeHTML(d.phone)}</td>
+      <td>${escapeHTML(d.itemName)}</td>
+      <td>
+        <div class="actions">
+          <button class="edit-btn" onclick="editDelivery(${index})">編集</button>
+          <button class="delete-btn" onclick="deleteDelivery(${index})">削除</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function escapeHTML(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// Add or update delivery
+function addDelivery() {
+  const customerCode = document.getElementById('customerCode').value.trim();
+  const slipType = document.getElementById('slipType').value;
+  const name = document.getElementById('name').value.trim();
+  const zip = document.getElementById('zip').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const address1 = document.getElementById('address1').value.trim();
+  const address2 = document.getElementById('address2').value.trim();
+  const itemName = document.getElementById('itemName').value.trim();
+  const memo = document.getElementById('memo').value.trim();
+
+  // Validation
+  if (!name || !zip || !phone || !address1 || !itemName) {
+    showError('必須項目をすべて入力してください');
+    return;
+  }
+
+  if (zip.length !== 7 || !/^\d+$/.test(zip)) {
+    showError('郵便番号は7桁の数字で入力してください');
+    return;
+  }
+
+  if (!/^\d+$/.test(phone)) {
+    showError('電話番号は数字のみで入力してください（ハイフンなし）');
+    return;
+  }
+
+  const delivery = { customerCode, slipType, name, zip, phone, address1, address2, itemName, memo };
+
+  if (editingIndex >= 0) {
+    // Update existing
+    deliveries[editingIndex] = delivery;
+    editingIndex = -1;
+    document.getElementById('addBtn').textContent = '追加';
+  } else {
+    // Add new
+    deliveries.push(delivery);
+  }
+
+  saveDeliveries();
+  clearForm();
+  hideError();
+}
+
+// Edit delivery
+function editDelivery(index) {
+  const d = deliveries[index];
+  document.getElementById('customerCode').value = d.customerCode || '';
+  document.getElementById('slipType').value = d.slipType || '0';
+  document.getElementById('name').value = d.name;
+  document.getElementById('zip').value = d.zip;
+  document.getElementById('phone').value = d.phone;
+  document.getElementById('address1').value = d.address1;
+  document.getElementById('address2').value = d.address2 || '';
+  document.getElementById('itemName').value = d.itemName;
+  document.getElementById('memo').value = d.memo || '';
+
+  editingIndex = index;
+  document.getElementById('addBtn').textContent = '更新';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Delete delivery
+function deleteDelivery(index) {
+  if (confirm('この配送先を削除しますか？')) {
+    deliveries.splice(index, 1);
+    saveDeliveries();
+  }
+}
+
+// Clear all
+function clearAll() {
+  if (deliveries.length === 0) return;
+  if (confirm(`全${deliveries.length}件を削除しますか？`)) {
+    deliveries = [];
+    saveDeliveries();
+  }
+}
+
+// Clear form
+function clearForm() {
+  document.getElementById('customerCode').value = '';
+  document.getElementById('slipType').value = '0';
+  document.getElementById('name').value = '';
+  document.getElementById('zip').value = '';
+  document.getElementById('phone').value = '';
+  document.getElementById('address1').value = '';
+  document.getElementById('address2').value = '';
+  document.getElementById('itemName').value = '';
+  document.getElementById('memo').value = '';
+}
+
+// Error handling
+function showError(msg) {
+  const errorDiv = document.getElementById('error');
+  errorDiv.textContent = msg;
+  errorDiv.classList.add('show');
+}
+
+function hideError() {
+  document.getElementById('error').classList.remove('show');
+}
+
+// Generate B2 CSV
+function generateCSV() {
+  if (deliveries.length === 0) return;
+
+  // B2 Cloud CSV Header (simplified version with required fields)
+  const header = [
+    'お客様管理番号', '送り状種類', 'クール区分', '伝票番号', '出荷予定日', 'お届け予定日',
+    '配達時間帯', 'お届け先コード', 'お届け先電話番号', 'お届け先電話番号枝番',
+    'お届け先郵便番号', 'お届け先住所', 'お届け先アパートマンション名',
+    'お届け先会社・部門１', 'お届け先会社・部門２', 'お届け先名', '敬称',
+    'ご依頼主コード', 'ご依頼主電話番号', 'ご依頼主電話番号枝番', 'ご依頼主郵便番号',
+    'ご依頼主住所', 'ご依頼主アパートマンション', 'ご依頼主名', '品名１', '品名２', '品名３', '品名４', '品名５',
+    '荷扱い１', '荷扱い２', '記事', 'ｺﾚｸﾄ代金引換額（税込)', '内消費税額等', '止置き',
+    '営業所コード', '発行枚数', '個数口枠の印字', '請求先顧客コード', '請求先分類コード',
+    '運賃管理番号', '注意事項', '保険金額', '保険金額印字', 'コンビニ決済', 'コンビニ決済印字', 'DM便', '配送方法',
+    '出荷予定通知メール', '完了メール', '情報端末入力用', 'お届け予定ｅメール利用区分',
+    'お届け予定ｅメールe-mailアドレス', '入力機種', 'お届け予定ｅメールメッセージ',
+    '配送業者', '配送ステータス', '追跡番号', '請求書番号', '請求日', '配送日', '配送完了日',
+    '配達店名', '配達店電話番号', '不在票連絡先', '宅配ボックス名称', '宅配ボックス表示', 'アプリ連携用項目'
+  ];
+
+  const rows = [header];
+
+  deliveries.forEach(d => {
+    const row = new Array(header.length).fill('');
+    // お客様管理番号
+    row[0] = d.customerCode || '';
+    // 送り状種類
+    row[1] = d.slipType || '0';
+    // お届け先電話番号
+    row[8] = d.phone;
+    // お届け先郵便番号
+    row[10] = d.zip;
+    // お届け先住所
+    row[11] = d.address1;
+    // お届け先アパートマンション名
+    row[12] = d.address2 || '';
+    // お届け先名
+    row[15] = d.name;
+    // 敬称
+    row[16] = '様';
+    // 品名１
+    row[24] = d.itemName;
+    // 記事
+    row[31] = d.memo || '';
+
+    rows.push(row);
+  });
+
+  // Convert to CSV with BOM
+  const BOM = '\uFEFF';
+  const csvContent = rows.map(row =>
+    row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
+  ).join('\r\n');
+
+  // Download
+  const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+  a.href = url;
+  a.download = `b2_manual_${dateStr}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Event listeners
+document.getElementById('addBtn').addEventListener('click', addDelivery);
+document.getElementById('downloadBtn').addEventListener('click', generateCSV);
+document.getElementById('clearBtn').addEventListener('click', clearAll);
+
+// Enter key support
+document.querySelectorAll('.form-input').forEach(input => {
+  input.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      addDelivery();
+    }
+  });
+});
+
+// Initialize
+loadDeliveries();
+</script>
+
+</body>
+</html>
