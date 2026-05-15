@@ -614,7 +614,20 @@ function hideError() {
 function generateCSV() {
   if (deliveries.length === 0) return;
 
-  // B2 Cloud CSV Header (simplified version with required fields)
+  // 御縁堂（依頼主）固定情報
+  const SENDER = {
+    phone: '8072457302',
+    zip: '1500021',
+    address: '東京都渋谷区恵比寿西2丁目4番8号',
+    building: 'ウィンド恵比寿ビル8F',
+    name: '御縁堂'
+  };
+
+  // Get today's date for 出荷予定日
+  const today = new Date();
+  const shipDate = `${today.getFullYear()}/${String(today.getMonth()+1).padStart(2,'0')}/${String(today.getDate()).padStart(2,'0')}`;
+
+  // B2 Cloud CSV Header (matches STORES export format)
   const header = [
     'お客様管理番号', '送り状種類', 'クール区分', '伝票番号', '出荷予定日', 'お届け予定日',
     '配達時間帯', 'お届け先コード', 'お届け先電話番号', 'お届け先電話番号枝番',
@@ -639,8 +652,10 @@ function generateCSV() {
     row[0] = d.customerCode || '';
     // 送り状種類
     row[1] = d.slipType || '0';
+    // 出荷予定日
+    row[4] = shipDate;
     // お届け先電話番号
-    row[8] = d.phone;
+    row[8] = d.phone || '';
     // お届け先郵便番号
     row[10] = d.zip;
     // お届け先住所
@@ -649,12 +664,24 @@ function generateCSV() {
     row[12] = d.address2 || '';
     // お届け先名
     row[15] = d.name;
-    // 敬称
-    row[16] = '様';
+    // 敬称（空欄）
+    row[16] = '';
+    // ご依頼主電話番号
+    row[18] = SENDER.phone;
+    // ご依頼主郵便番号
+    row[20] = SENDER.zip;
+    // ご依頼主住所
+    row[21] = SENDER.address;
+    // ご依頼主アパートマンション
+    row[22] = SENDER.building;
+    // ご依頼主名
+    row[23] = SENDER.name;
     // 品名１
     row[24] = d.itemName;
     // 記事
     row[31] = d.memo || '';
+    // 個数口枠の印字
+    row[37] = '1';
 
     rows.push(row);
   });
