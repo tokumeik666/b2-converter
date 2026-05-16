@@ -666,18 +666,18 @@ function generateCSV() {
     row[15] = d.name;
     // 敬称（空欄）
     row[16] = '';
-    // ご依頼主電話番号
-    row[18] = SENDER.phone;
-    // ご依頼主郵便番号
-    row[20] = SENDER.zip;
-    // ご依頼主住所
-    row[21] = SENDER.address;
-    // ご依頼主アパートマンション
-    row[22] = SENDER.building;
-    // ご依頼主名
-    row[23] = SENDER.name;
-    // 品名１
-    row[24] = d.itemName;
+    // ご依頼主電話番号 (20列目 = index 19)
+    row[19] = SENDER.phone;
+    // ご依頼主郵便番号 (22列目 = index 21)
+    row[21] = SENDER.zip;
+    // ご依頼主住所 (23列目 = index 22)
+    row[22] = SENDER.address;
+    // ご依頼主アパートマンション (24列目 = index 23)
+    row[23] = SENDER.building;
+    // ご依頼主名 (25列目 = index 24)
+    row[24] = SENDER.name;
+    // 品名１ (28列目 = index 27)
+    row[27] = d.itemName;
     // 記事
     row[31] = d.memo || '';
     // 個数口枠の印字
