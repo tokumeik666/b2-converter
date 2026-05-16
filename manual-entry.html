@@ -650,8 +650,8 @@ function generateCSV() {
     const row = new Array(header.length).fill('');
     // お客様管理番号
     row[0] = d.customerCode || '';
-    // 送り状種類（空欄）
-    row[1] = '';
+    // 送り状種類（発払い = 0）
+    row[1] = d.slipType || '0';
     // 出荷予定日
     row[4] = shipDate;
     // お届け先電話番号
