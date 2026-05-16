@@ -616,7 +616,7 @@ function generateCSV() {
 
   // 御縁堂（依頼主）固定情報
   const SENDER = {
-    phone: '8072457302',
+    phone: '08072457302',
     zip: '1500021',
     address: '東京都渋谷区恵比寿西2丁目4番8号',
     building: 'ウィンド恵比寿ビル8F',
@@ -650,8 +650,8 @@ function generateCSV() {
     const row = new Array(header.length).fill('');
     // お客様管理番号
     row[0] = d.customerCode || '';
-    // 送り状種類
-    row[1] = d.slipType || '0';
+    // 送り状種類（空欄）
+    row[1] = '';
     // 出荷予定日
     row[4] = shipDate;
     // お届け先電話番号
