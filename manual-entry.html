@@ -620,7 +620,9 @@ function generateCSV() {
     zip: '1500021',
     address: '東京都渋谷区恵比寿西2丁目4番8号',
     building: 'ウィンド恵比寿ビル8F',
-    name: '御縁堂'
+    name: '御縁堂',
+    requestCode: '080605714429', // 請求先顧客コード
+    classCode: '01' // 請求先分類コード
   };
 
   // Get today's date for 出荷予定日
@@ -680,8 +682,10 @@ function generateCSV() {
     row[27] = d.itemName;
     // 記事
     row[31] = d.memo || '';
-    // 個数口枠の印字
-    row[37] = '1';
+    // 請求先顧客コード (40列目 = index 39)
+    row[39] = SENDER.requestCode;
+    // 請求先分類コード (42列目 = index 41)
+    row[41] = SENDER.classCode;
 
     rows.push(row);
   });
